@@ -280,6 +280,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           Consumer<ThemeProvider>(
                             builder: (context, themeProvider, _) {
                               return Switch(
+                                inactiveTrackColor: context.themeTextDisabled,
+                                inactiveThumbColor: context.themeTextSecondary,
                                 value: themeProvider.themeMode == ThemeMode.dark,
                                 onChanged: (value) async {
                                   await themeProvider.setThemeMode(

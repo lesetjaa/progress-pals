@@ -27,6 +27,7 @@ class HomePage extends StatelessWidget {
       body: _pages[homeViewModel.selectedIndex],
       extendBody: true,
       bottomNavigationBar: DotNavigationBar(
+        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
         itemPadding: const EdgeInsets.only(
           left: 30,
           right: 30,
