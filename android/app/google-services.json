@@ -1,0 +1,118 @@
+{
+  "project_info": {
+    "project_number": "908446627310",
+    "project_id": "progress-pals-7cabd",
+    "storage_bucket": "progress-pals-7cabd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:908446627310:android:04cd5c2a60a82573d70aff",
+        "android_client_info": {
+          "package_name": "com.example.progress_pals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "908446627310-2nc0p0726j6hnop471roubtdifie8afh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD829kNJhA5bwLCXtvZ_6Pv0OTFB0nx3Cs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "908446627310-2nc0p0726j6hnop471roubtdifie8afh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "908446627310-e9gkd2ciprftonfjv2d286017mon8o53.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.lesetja.progressPals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:908446627310:android:d96d22320f20b945d70aff",
+        "android_client_info": {
+          "package_name": "com.lesetja.progress_pals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "908446627310-2nc0p0726j6hnop471roubtdifie8afh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD829kNJhA5bwLCXtvZ_6Pv0OTFB0nx3Cs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "908446627310-2nc0p0726j6hnop471roubtdifie8afh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "908446627310-e9gkd2ciprftonfjv2d286017mon8o53.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.lesetja.progressPals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:908446627310:android:f4fd34b7206da1ebd70aff",
+        "android_client_info": {
+          "package_name": "com.lesetja.progresspals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "908446627310-2nc0p0726j6hnop471roubtdifie8afh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD829kNJhA5bwLCXtvZ_6Pv0OTFB0nx3Cs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "908446627310-2nc0p0726j6hnop471roubtdifie8afh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "908446627310-e9gkd2ciprftonfjv2d286017mon8o53.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.lesetja.progressPals"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
