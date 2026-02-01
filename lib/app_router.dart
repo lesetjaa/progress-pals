@@ -148,8 +148,7 @@ final appRouter = GoRouter(
               path: 'friend-analytics',
               builder: (context, state) {
                 final friend = state.extra as FriendModel?;
-                var _logger = Logger();
-                _logger.f(
+                Logger().f(
                   "Navigating to analytics for friend: ${friend?.name}, ID: ${friend?.id}, userId: ${friend?.userId}",
                 );
                 return FriendAnalyticsPage(friend: friend);

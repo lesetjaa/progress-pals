@@ -72,6 +72,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: context.themeBackground,
       appBar: AppBar(
@@ -92,34 +95,36 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _habits.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.analytics_outlined,
-                    size: 64,
-                    color: context.themeTextPrimary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No analytics yet',
-                    style: TextStyle(
-                      color: context.themeTextSecondary,
-                      fontSize: 16,
+          ? SafeArea(
+            child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.analytics_outlined,
+                      size: 64,
+                      color: context.themeTextPrimary,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Create habits to see analytics',
-                    style: TextStyle(
-                      color: context.themeTextSecondary,
-                      fontSize: 14,
+                    const SizedBox(height: 16),
+                    Text(
+                      'No analytics yet',
+                      style: TextStyle(
+                        color: context.themeTextSecondary,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'Create habits to see analytics',
+                      style: TextStyle(
+                        color: context.themeTextSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            )
+          )
           : SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -191,6 +196,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     ),
                     const SizedBox(height: 12),
                     _buildFrequencyChart(),
+                    SizedBox(height: screenHeight * 0.15),
 
                   ],
                 ),

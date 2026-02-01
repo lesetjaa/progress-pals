@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:progress_pals/core/theme/app_colors.dart';
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 
 class DateBubble extends StatelessWidget {

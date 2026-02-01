@@ -24,10 +24,7 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
@@ -61,4 +58,13 @@ class DefaultFirebaseOptions {
     iosClientId: '908446627310-e9gkd2ciprftonfjv2d286017mon8o53.apps.googleusercontent.com',
     iosBundleId: 'com.lesetja.progressPals',
   );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyD829kNJhA5bwLCXtvZ_6Pv0OTFB0nx3Cs',
+    appId: '1:908446627310:android:d96d22320f20b945d70aff',
+    messagingSenderId: '908446627310',
+    projectId: 'progress-pals-7cabd',
+    storageBucket: 'progress-pals-7cabd.firebasestorage.app',
+  );
+
 }

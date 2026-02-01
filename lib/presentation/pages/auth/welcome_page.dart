@@ -9,53 +9,58 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-
-              // 1. Header Text
-              Text(
-                'WELCOME\nBACK.',
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primary,
-                  height: 1.1,
-                  letterSpacing: -1.0,
+          padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.04, vertical: screenHeight * 0.02),
+          child: Container(
+            height: screenHeight,
+            width: screenWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: screenHeight * 0.03),
+            
+                // 1. Header Text
+                Text(
+                  'WELCOME\nBACK.',
+                  style: TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primary,
+                    height: 1.1,
+                    letterSpacing: -1.0,
+                  ),
                 ),
-              ),
-
-              const Spacer(flex: 2),
-
-              // 2. Illustration
-              Center(
-                child: SvgPicture.asset(
-                  'assets/images/Login_page_image.svg',
-                  height: 500,
-                  fit: BoxFit.contain,
+            
+                Spacer(flex: screenHeight > 700 ? 2 : 1),
+            
+                // 2. Illustration
+                Center(
+                  child: SvgPicture.asset(
+                    'assets/images/Login_page_image.svg',
+                    height: screenHeight * 0.4,
+                    fit: BoxFit.contain,
+                  ),
                 ),
-              ),
-
-              const Spacer(flex: 3),
-
-              AppButton(
-                text: 'Login',
-                type: ButtonType.primary,
-                onPressed: () {
-                  context.push('/sign-in');
-                },
-              ),
-
-              const SizedBox(height: 36),
-
-              // const SizedBox(height: 20),
-            ],
+            
+                Spacer(flex: screenHeight > 700 ? 2 : 1),
+            
+                AppButton(
+                  text: 'Login',
+                  type: ButtonType.primary,
+                  onPressed: () {
+                    context.push('/sign-in');
+                  },
+                ),
+            
+                SizedBox(height: screenHeight * 0.02),
+              ],
+            ),
           ),
         ),
       ),

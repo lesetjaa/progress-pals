@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/web.dart';
-import 'package:progress_pals/core/theme/app_colors.dart';
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/data/datasources/local/database_service.dart';
 import 'package:progress_pals/data/datasources/remote/firebase_service.dart';

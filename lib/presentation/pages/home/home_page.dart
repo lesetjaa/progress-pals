@@ -22,23 +22,23 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final homeViewModel = Provider.of<HomeViewModel>(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: context.themeTextDisabled,
       body: _pages[homeViewModel.selectedIndex],
       extendBody: true,
       bottomNavigationBar: DotNavigationBar(
         backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-        itemPadding: const EdgeInsets.only(
-          left: 30,
-          right: 30,
-          top: 16,
-          bottom: 16,
+        itemPadding: EdgeInsets.only(
+          left: screenWidth * 0.04,
+          right: screenWidth * 0.04,
+          top: screenHeight * 0.017,
+          bottom: screenHeight * 0.017,
         ),
         margin: const EdgeInsets.all(0),
-        marginR: EdgeInsets.only(
-          left: MediaQuery.of(context).size.width * 0.05,
-          right: MediaQuery.of(context).size.width * 0.05,
-        ),
+        marginR: EdgeInsets.symmetric(horizontal: screenHeight * 0.05),
         paddingR: const EdgeInsets.all(0),
         currentIndex: homeViewModel.selectedIndex,
         onTap: homeViewModel.setIndex,
