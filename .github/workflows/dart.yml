@@ -16,7 +16,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -25,8 +25,6 @@ jobs:
       # You can specify other versions if desired, see documentation here:
       # https://github.com/dart-lang/setup-dart/blob/main/README.md
       # - uses: dart-lang/setup-dart@v1
-      - uses: dart-lang/setup-dart@9a04e6d73cca37bd455e0608d7e5092f881fd603
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -44,8 +42,8 @@ jobs:
       #   run: dart format --output=none --set-exit-if-changed .
 
       # Consider passing '--fatal-infos' for slightly stricter analysis.
-      - name: Build Ios
-        run: flutter build ios
+      - name: Build iOS
+        run: flutter build ios --release --no-codesign
 
       # Your project will need to have tests in test/ and a dependency on
       # package:test for this step to succeed. Note that Flutter projects will
