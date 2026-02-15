@@ -3,24 +3,24 @@
 # Fail this script if any command fails.
 set -e
 
-# The default execution directory of this script is the ci_scripts directory.
-# We need to navigate to the root of your Flutter project.
 cd $CI_WORKSPACE
 
-# 1. Install CocoaPods using Homebrew
+# 1. Safely install CocoaPods (Adding || true prevents crashing if it's already installed)
 export HOMEBREW_NO_AUTO_UPDATE=1
-brew install cocoapods
+brew install cocoapods || true
 
-# 2. Install Flutter (stable channel)
-git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
+# 2. Safely clone Flutter (Only clone if the directory doesn't already exist)
+if [ ! -d "$HOME/flutter" ]; then
+  git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
+fi
 export PATH="$PATH:$HOME/flutter/bin"
 
-# 3. Install Flutter artifacts for iOS
+# 3. Install Flutter artifacts
 flutter precache --ios
 
-# 4. Get Flutter packages (This generates Generated.xcconfig!)
+# 4. Get Flutter packages
 flutter pub get
 
-# 5. Install iOS Pods (This generates the Pods-Runner files!)
+# 5. Install iOS Pods (Added --repo-update to ensure Firebase links correctly)
 cd ios
-pod install
+pod install --repo-update
