@@ -20,8 +20,11 @@ class FirebaseService {
       // 1. Get the map (which has 'sharedWith' as a String for SQLite)
       final habitData = habit.toMap();
 
-      // 2. THE FIX: Overwrite it with the actual List for Firestore
+      // 2. THE FIX: Overwrite fields for Firestore-friendly types
       habitData['sharedWith'] = habit.sharedWith;
+      habitData['completionDates'] = habit.completionDates
+          ?.map((d) => d.toIso8601String())
+          .toList();
 
       await habitRef.set(habitData);
       _logger.i('Habit added to Firestore: ${habit.name}');
@@ -65,8 +68,11 @@ class FirebaseService {
       // 1. Get the map
       final habitData = habit.toMap();
 
-      // 2. THE FIX: Overwrite with List
+      // 2. THE FIX: Overwrite with Firestore-friendly types
       habitData['sharedWith'] = habit.sharedWith;
+      habitData['completionDates'] = habit.completionDates
+          ?.map((d) => d.toIso8601String())
+          .toList();
 
       await _firestore
           .collection('users')

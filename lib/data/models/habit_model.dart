@@ -12,6 +12,8 @@ class HabitModel {
   final int completedCount;
   final DateTime? lastCompletedDate;
   final DateTime? lastResetDate;
+  // Optional history of completion timestamps (ISO strings stored in DB/Firestore)
+  final List<DateTime>? completionDates;
 
   // SOCIAL
   // Share with a friend (insert their email here)
@@ -26,6 +28,7 @@ class HabitModel {
     required this.completedCount,
     this.lastCompletedDate,
     this.lastResetDate,
+    this.completionDates,
     required this.sharedWith,
     this.isSynced = false,
   });
@@ -41,6 +44,12 @@ class HabitModel {
       // Store DateTime as ISO string for SQLite
       'lastCompletedDate': lastCompletedDate?.toIso8601String(),
       'lastResetDate': lastResetDate?.toIso8601String(),
+      // Store completionDates as JSON string for SQLite compatibility
+      'completionDates': completionDates != null
+          ? jsonEncode(
+              completionDates!.map((d) => d.toIso8601String()).toList(),
+            )
+          : null,
       'sharedWith': jsonEncode(sharedWith),
       'isSynced': isSynced ? 1 : 0,
     };
@@ -63,10 +72,10 @@ class HabitModel {
 
     List<String> parseSharedWith(dynamic value) {
       if (value == null) return [];
-      
+
       // If it's already a List (from Firestore), just return it
       if (value is List) return List<String>.from(value);
-      
+
       // If it's a String (from SQLite), decode it
       if (value is String) {
         try {
@@ -75,7 +84,7 @@ class HabitModel {
           return [];
         }
       }
-      
+
       return [];
     }
 
@@ -90,6 +99,31 @@ class HabitModel {
       parsedDate = null;
     }
 
+    // Parse completionDates (supports List from Firestore or JSON String from SQLite)
+    List<DateTime>? parsedCompletionDates;
+    try {
+      final raw = map['completionDates'];
+      if (raw == null) {
+        parsedCompletionDates = null;
+      } else if (raw is List) {
+        parsedCompletionDates = raw
+            .map((e) => DateTime.tryParse(e.toString()))
+            .whereType<DateTime>()
+            .toList();
+      } else if (raw is String) {
+        // Might be a JSON-encoded array
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          parsedCompletionDates = decoded
+              .map((e) => DateTime.tryParse(e.toString()))
+              .whereType<DateTime>()
+              .toList();
+        }
+      }
+    } catch (e) {
+      parsedCompletionDates = null;
+    }
+
     return HabitModel(
       id: toSafeString(map['id']),
       userId: toSafeString(map['userId']),
@@ -101,6 +135,7 @@ class HabitModel {
       lastResetDate: map['lastResetDate'] != null
           ? DateTime.tryParse(toSafeString(map['lastResetDate']))
           : null,
+      completionDates: parsedCompletionDates,
       sharedWith: parseSharedWith(map['sharedWith']),
       isSynced: (map['isSynced'] as int?) == 1,
     );

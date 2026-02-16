@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/web.dart';
+import 'package:go_router/go_router.dart';
 import 'package:progress_pals/core/theme/app_colors.dart';
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/data/datasources/local/database_service.dart';
@@ -96,7 +97,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           ? const Center(child: CircularProgressIndicator())
           : _habits.isEmpty
           ? SafeArea(
-            child: Center(
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -124,7 +125,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   ],
                 ),
               ),
-          )
+            )
           : SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -142,7 +143,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
                     // Total Completed This Week
                     _buildStatCard(
-                      'Completed This Week',
+                      'Total Habits Completed This Week',
                       '${_getTotalCompletedThisWeek()}',
                       Colors.green,
                       Icons.check_circle,
@@ -184,20 +185,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         .toList(),
 
                     const SizedBox(height: 20),
-
-                    // Completion Frequency Chart
-                    Text(
-                      'Completion Frequency',
-                      style: TextStyle(
-                        color: context.themeTextPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildFrequencyChart(),
                     SizedBox(height: screenHeight * 0.15),
-
                   ],
                 ),
               ),
@@ -331,120 +319,55 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         ? (habit.completedCount / habit.repeatPerWeek).clamp(0.0, 1.0)
         : 0.0;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    habit.name,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: context.themeTextPrimary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Text(
-                  '${habit.completedCount}/${habit.repeatPerWeek}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: context.themeTextPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 6,
-                backgroundColor: context.themeTextPrimary.withValues(
-                  alpha: 0.2,
-                ),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  progress >= 1.0 ? Colors.green : context.themeTextPrimary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFrequencyChart() {
-    final frequency = _getCompletionFrequency();
-    if (frequency.isEmpty) {
-      return Column(
-        children: [
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              'No completion data yet',
-              style: TextStyle(color: context.themeTextSecondary),
-            ),
-          ),
-        ],
-      );
-    }
-
-    final maxFrequency = frequency.values.isEmpty
-        ? 1
-        : frequency.values.reduce((a, b) => a > b ? a : b);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: frequency.entries.map((entry) {
-            final percentage = (entry.value / maxFrequency) * 100;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
+    return InkWell(
+      onTap: () => context.push('/home/habit', extra: habit),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(
-                    width: 50,
-                    child: Text(
-                      entry.key,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
                   Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: percentage / 100,
-                        minHeight: 24,
-                        backgroundColor: context.themeTextPrimary.withValues(
-                          alpha: 0.1,
-                        ),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
-                        ),
+                    child: Text(
+                      habit.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: context.themeTextPrimary,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Text(
-                    '${entry.value}',
-                    style: const TextStyle(
+                    '${habit.completedCount}/${habit.repeatPerWeek}',
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
+                      color: context.themeTextPrimary,
                     ),
                   ),
                 ],
               ),
-            );
-          }).toList(),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: context.themeTextPrimary.withValues(
+                    alpha: 0.2,
+                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    progress >= 1.0 ? Colors.green : context.themeTextPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
