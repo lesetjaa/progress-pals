@@ -1,8 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 import 'package:logger/web.dart';
 import 'package:go_router/go_router.dart';
-import 'package:progress_pals/core/theme/app_colors.dart';
+
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/data/datasources/local/database_service.dart';
 import 'package:progress_pals/data/models/habit_model.dart';
@@ -28,9 +28,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Future<void> _loadHabits() async {
     setState(() => _isLoading = true);
     try {
-      final habits = await _databaseService.getHabits();
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      final userHabits = habits.where((h) => h.userId == userId).toList();
+      final userHabits = await _databaseService.getHabits();
       setState(() => _habits = userHabits);
     } catch (e) {
       Logger().e('Error loading habits: $e');
@@ -49,17 +47,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     return _habits.fold(0, (sum, habit) => sum + habit.completedCount);
   }
 
-  Map<String, int> _getCompletionFrequency() {
-    final frequency = <String, int>{};
-    for (final habit in _habits) {
-      if (habit.lastCompletedDate != null) {
-        final dateKey =
-            '${habit.lastCompletedDate!.day}/${habit.lastCompletedDate!.month}';
-        frequency[dateKey] = (frequency[dateKey] ?? 0) + 1;
-      }
-    }
-    return frequency;
-  }
 
   int _getCompletionPercentage() {
     if (_habits.isEmpty) return 0;
@@ -74,7 +61,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       backgroundColor: context.themeBackground,
@@ -181,8 +167,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             padding: const EdgeInsets.only(bottom: 12),
                             child: _buildHabitProgressCard(habit),
                           ),
-                        )
-                        .toList(),
+                        ),
 
                     const SizedBox(height: 20),
                     SizedBox(height: screenHeight * 0.15),

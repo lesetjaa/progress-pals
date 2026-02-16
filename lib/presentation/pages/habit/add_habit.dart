@@ -103,7 +103,6 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
         
       }
 
-
       // Refresh the habits list in HomeViewModel
       if (mounted) {
         final homeViewModel = context.read<HomeViewModel>();

@@ -7,6 +7,8 @@ import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/data/datasources/local/database_service.dart';
 import 'package:progress_pals/data/datasources/remote/firebase_service.dart';
 import 'package:progress_pals/data/models/friend_model.dart';
+import 'package:progress_pals/presentation/viewmodels/friends_viewmodel.dart';
+import 'package:provider/provider.dart';
 
 class FriendsPage extends StatefulWidget {
   const FriendsPage({super.key});
@@ -15,7 +17,7 @@ class FriendsPage extends StatefulWidget {
   State<FriendsPage> createState() => _FriendsPageState();
 }
 
-class _FriendsPageState extends State<FriendsPage> {
+class _FriendsPageState extends State<FriendsPage> with WidgetsBindingObserver {
   final DatabaseService _databaseService = DatabaseService();
   final FirebaseService _firebaseService = FirebaseService();
 
@@ -25,7 +27,23 @@ class _FriendsPageState extends State<FriendsPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadFriends();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh when coming back from background
+      final viewModel = Provider.of<FriendsViewModel>(context, listen: false);
+      viewModel.refreshFriends();
+    }
   }
 
   Future<void> _loadFriends() async {
@@ -54,25 +72,29 @@ class _FriendsPageState extends State<FriendsPage> {
   Future<void> _removeFriend(FriendModel friend) async {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Remove Friend'),
           content: Text('Are you sure you want to remove ${friend.name}?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context);
+                final friendName = friend.name;
+                final friendId = friend.id;
+                Navigator.pop(dialogContext);
                 try {
-                  await _databaseService.deleteFriend(friend.id);
-                  await _firebaseService.removeFriend(friend.id);
+                  await _databaseService.deleteFriend(friendId);
+                  await _firebaseService.removeFriend(friendId);
                   await _loadFriends();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${friend.name} removed!')),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('$friendName removed!')),
+                    );
+                  }
                 } catch (e) {
                   Logger().e('Error removing friend: $e');
                 }
@@ -206,7 +228,9 @@ class _FriendsPageState extends State<FriendsPage> {
                                       Icons.delete,
                                       color: Colors.red,
                                     ),
-                                    onPressed: () => _removeFriend(friend),
+                                    onPressed: () async {
+                                      await _removeFriend(friend);
+                                    },
                                   ),
                                 ],
                               ),
