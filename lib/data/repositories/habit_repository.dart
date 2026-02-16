@@ -5,7 +5,7 @@ abstract class IHabitRepository {
   Future<List<HabitModel>> getHabits();
   Future<void> addHabit(HabitModel habit);
   Future<void> updateHabit(HabitModel habit);
-  Future<void> deleteHabit(String id);
+  Future<void> deleteHabit(HabitModel habit);
   Future<void> completeHabit(String id);
 }
 
@@ -30,8 +30,8 @@ class HabitRepository implements IHabitRepository {
   }
 
   @override
-  Future<void> deleteHabit(String id) async {
-    await _databaseService.deleteHabit(id);
+  Future<void> deleteHabit(HabitModel habit) async {
+    await _databaseService.deleteHabit(habit);
   }
 
   @override

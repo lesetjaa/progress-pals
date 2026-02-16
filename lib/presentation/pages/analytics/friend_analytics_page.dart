@@ -40,7 +40,6 @@ class _FriendAnalyticsPageState extends State<FriendAnalyticsPage> {
       // Load only habits shared with current user
       final firebaseService = FirebaseService();
 
-      firebaseService.debugFriendHabits(widget.friend!.userId);
       Logger().f(widget.friend!.toMap());
       final friendHabits = await firebaseService.getSharedHabitsFromFriend(
         widget.friend!.userId,
