@@ -10,7 +10,7 @@ import 'package:progress_pals/data/models/habit_model.dart';
 class FriendAnalyticsPage extends StatefulWidget {
   final FriendModel? friend;
 
-  const FriendAnalyticsPage({Key? key, this.friend}) : super(key: key);
+  const FriendAnalyticsPage({super.key, this.friend});
 
   @override
   State<FriendAnalyticsPage> createState() => _FriendAnalyticsPageState();
@@ -238,7 +238,7 @@ class _FriendAnalyticsPageState extends State<FriendAnalyticsPage> {
                             child: _buildHabitProgressCard(habit),
                           ),
                         )
-                        .toList(),
+                        // .toList(),
                   ],
                 ),
               ),

@@ -81,6 +81,7 @@ class DatabaseService implements AppDatabase {
         }
       },
     );
+    syncAllData(FirebaseAuth.instance.currentUser?.uid ?? '');
     return _database!;
   }
 
@@ -260,7 +261,7 @@ class DatabaseService implements AppDatabase {
 
   Future<void> syncFriendsFromCloud(String userId) async {
     try {
-      final cloudFriends = await _firebaseService.getFriendsOnce(userId);
+      final cloudFriends = await _firebaseService.getFriends(userId);
       final db = await database;
 
       for (final friend in cloudFriends) {

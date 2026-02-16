@@ -147,18 +147,7 @@ class FirebaseService {
         .set(friend.toMap());
   }
 
-  Stream<List<FriendModel>> getFriends(String userId) {
-    return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('friends')
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => FriendModel.fromMap(doc.data())).toList();
-    });
-  }
-
-  Future<List<FriendModel>> getFriendsOnce(String userId) async {
+  Future<List<FriendModel>> getFriends(String userId) async {
     try {
       final snapshot = await _firestore
           .collection("users")
