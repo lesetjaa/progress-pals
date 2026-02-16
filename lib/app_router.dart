@@ -7,6 +7,7 @@ import 'package:progress_pals/data/models/habit_model.dart';
 import 'package:progress_pals/data/models/friend_model.dart';
 import 'package:progress_pals/presentation/pages/auth/welcome_page.dart';
 import 'package:progress_pals/presentation/pages/habit/add_habit.dart';
+import 'package:progress_pals/presentation/pages/habit/habit_detail_page.dart';
 import 'package:progress_pals/presentation/pages/friends/add_friend.dart';
 import 'package:progress_pals/presentation/pages/home/home_page.dart';
 import 'package:progress_pals/presentation/pages/analytics/friend_analytics_page.dart';
@@ -152,6 +153,13 @@ final appRouter = GoRouter(
                   "Navigating to analytics for friend: ${friend?.name}, ID: ${friend?.id}, userId: ${friend?.userId}",
                 );
                 return FriendAnalyticsPage(friend: friend);
+              },
+            ),
+            GoRoute(
+              path: 'habit',
+              builder: (context, state) {
+                final habit = state.extra as HabitModel?;
+                return HabitDetailPage(habit: habit);
               },
             ),
             GoRoute(

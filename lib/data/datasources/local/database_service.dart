@@ -24,7 +24,7 @@ class DatabaseService implements AppDatabase {
   Future<Database> initDatabase() async {
     _database = await openDatabase(
       "habits.db",
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
             CREATE TABLE IF NOT EXISTS Habits (
@@ -36,6 +36,7 @@ class DatabaseService implements AppDatabase {
               completedCount INTEGER, 
               lastCompletedDate TEXT, 
               lastResetDate TEXT,
+              completionDates TEXT,
               sharedWith TEXT,
               isSynced INTEGER
             )
@@ -56,6 +57,13 @@ class DatabaseService implements AppDatabase {
         }
         if (oldVersion < 3) {
           await db.execute('ALTER TABLE Habits ADD COLUMN lastResetDate TEXT');
+        }
+        if (oldVersion < 6) {
+          try {
+            await db.execute(
+              'ALTER TABLE Habits ADD COLUMN completionDates TEXT',
+            );
+          } catch (_) {}
         }
         if (oldVersion < 4) {
           await db.execute('''

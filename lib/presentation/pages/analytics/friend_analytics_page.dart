@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/web.dart';
 import 'package:progress_pals/core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 import 'package:progress_pals/data/datasources/remote/firebase_service.dart';
 import 'package:progress_pals/data/models/friend_model.dart';
 import 'package:progress_pals/data/models/habit_model.dart';
@@ -82,7 +83,7 @@ class _FriendAnalyticsPageState extends State<FriendAnalyticsPage> {
     if (widget.friend == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Friend Analytics')),
-        body: const Center(child: Text('No friend data available',)),
+        body: const Center(child: Text('No friend data available')),
       );
     }
 
@@ -367,49 +368,52 @@ class _FriendAnalyticsPageState extends State<FriendAnalyticsPage> {
         ? (habit.completedCount / habit.repeatPerWeek).clamp(0.0, 1.0)
         : 0.0;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    habit.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+    return InkWell(
+      onTap: () => context.push('/home/habit', extra: habit),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      habit.name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Text(
-                  '${habit.completedCount}/${habit.repeatPerWeek}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                  Text(
+                    '${habit.completedCount}/${habit.repeatPerWeek}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 6,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  progress >= 1.0 ? Colors.green : AppColors.primary,
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    progress >= 1.0 ? Colors.green : AppColors.primary,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
