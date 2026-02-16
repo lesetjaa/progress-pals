@@ -55,9 +55,9 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteHabit(String habitId) async {
+  Future<void> deleteHabit(HabitModel habit) async {
     try {
-      await _habitRepository.deleteHabit(habitId);
+      await _habitRepository.deleteHabit(habit);
       await fetchHabits();
     } catch (e) {
       Logger().e('Error deleting habit: $e');
