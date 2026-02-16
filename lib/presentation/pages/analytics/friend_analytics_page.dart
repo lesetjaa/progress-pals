@@ -42,7 +42,7 @@ class _FriendAnalyticsPageState extends State<FriendAnalyticsPage> {
 
       Logger().f(widget.friend!.toMap());
       final friendHabits = await firebaseService.getSharedHabitsFromFriend(
-        widget.friend!.userId,
+        widget.friend!.id,
       );
 
       setState(() => _friendHabits = friendHabits);

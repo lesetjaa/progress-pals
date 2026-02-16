@@ -29,7 +29,7 @@ class FirebaseService {
           .collection('habits')
           .where('userId', isEqualTo: userId)
           .get();
-          
+
       return snapshot.docs
           .map((doc) => HabitModel.fromMap(doc.data()))
           .toList();
@@ -64,11 +64,16 @@ class FirebaseService {
 
   Future<void> deleteHabit(HabitModel habit) async {
     try {
-      await _firestore.collection('habits').where('id', isEqualTo: habit.id).where('userId', isEqualTo: habit.userId).get().then((snapshot) {
-        if (snapshot.docs.isNotEmpty) {
-          snapshot.docs.first.reference.delete();
-        }
-      });
+      await _firestore
+          .collection('habits')
+          .where('id', isEqualTo: habit.id)
+          .where('userId', isEqualTo: habit.userId)
+          .get()
+          .then((snapshot) {
+            if (snapshot.docs.isNotEmpty) {
+              snapshot.docs.first.reference.delete();
+            }
+          });
       _logger.i('Habit deleted from Firestore');
     } catch (e) {
       _logger.e('Error deleting habit: $e');
@@ -76,9 +81,8 @@ class FirebaseService {
     }
   }
 
-  Future<List<HabitModel>> getSharedHabitsFromFriend(String friendUserId) async {
+  Future<List<HabitModel>> getSharedHabitsFromFriend(String friendId) async {
     try {
-      _logger.f("Fetching Shared Habits (Flat Structure)");
       final user = FirebaseAuth.instance.currentUser;
       if (user == null || user.email == null) {
         _logger.e('Error: User not logged in or has no email');
@@ -86,42 +90,31 @@ class FirebaseService {
       }
 
       final myEmail = user.email!.trim().toLowerCase();
-      _logger.i("Looking for habits shared with: $myEmail");
+      _logger.i("Looking for habits owned by: $friendId");
+      _logger.i("That are shared with my email: $myEmail");
 
-      // Changed: Query the root 'habits' collection for the friend's ID
+      // 1. Fetch ALL habits owned by this specific friend
       final snapshot = await _firestore
           .collection('habits')
-          .where('userId', isEqualTo: friendUserId)
+          .where('userId', isEqualTo: friendId)
           .get(); 
-
-      _logger.i("Found ${snapshot.docs.length} total habits for friend. Filtering now...");
 
       List<HabitModel> matchingHabits = [];
 
+      // 2. Filter them locally to handle both List and String database formats
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final rawSharedWith = data['sharedWith'];
         bool isShared = false;
 
         if (rawSharedWith is List) {
-          final cleanedList = rawSharedWith.map((e) {
-            return e.toString().toLowerCase().trim()
-                .replaceAll("'", "").replaceAll('"', "")
-                .replaceAll("[", "").replaceAll("]", "");
-          }).toList();
-
-          for (final item in cleanedList) {
-            if (item == myEmail) {
-              isShared = true;
-              break;
-            }
-          }
+          // Modern Firestore Array: Clean each item and check for an exact match
+          isShared = rawSharedWith.any((sharedEmail) => 
+              sharedEmail.toString().trim().toLowerCase() == myEmail);
+              
         } else if (rawSharedWith is String) {
-          final cleanString = rawSharedWith.toLowerCase().trim()
-              .replaceAll("'", "").replaceAll('"', "");
-          if (cleanString.contains(myEmail)) {
-            isShared = true;
-          }
+          // Legacy/SQLite fallback: If it got saved as a raw string like "[email@test.com]"
+          isShared = rawSharedWith.toLowerCase().contains(myEmail);
         }
 
         if (isShared) {
@@ -131,6 +124,7 @@ class FirebaseService {
 
       _logger.i("Final Result: ${matchingHabits.length} habits shared with me.");
       return matchingHabits;
+      
     } catch (e) {
       _logger.e('Error fetching shared habits: $e');
       return [];
@@ -143,7 +137,7 @@ class FirebaseService {
         .collection('users')
         .doc(currentUserId)
         .collection('friends')
-        .doc(friend.userId)
+        .doc(friend.id) // THE FIX: Changed from friend.userId to friend.id
         .set(friend.toMap());
   }
 
@@ -154,7 +148,9 @@ class FirebaseService {
           .doc(userId)
           .collection('friends')
           .get();
-      return snapshot.docs.map((doc) => FriendModel.fromMap(doc.data())).toList();
+      return snapshot.docs
+          .map((doc) => FriendModel.fromMap(doc.data()))
+          .toList();
     } catch (e) {
       _logger.e('Error fetching friends: $e');
       return [];

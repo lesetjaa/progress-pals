@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/data/datasources/local/database_service.dart';
@@ -64,9 +65,12 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
       return;
     }
 
+    // THE FIX: Get the current logged-in user (User A)
+    final currentUser = FirebaseAuth.instance.currentUser;
+
     final newFriend = FriendModel(
-      id: const Uuid().v4(),
-      userId: foundUserData['userId'],
+      id: foundUserData['userId'], // THE FIX: The friend's actual Firebase ID
+      userId: currentUser!.uid, // THE FIX: The owner of this list (User A)
       email: foundUserData['email'],
       name: foundUserData['displayName'] ?? 'Unknown',
       addedDate: DateTime.now(),
