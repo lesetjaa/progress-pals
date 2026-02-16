@@ -24,7 +24,7 @@ class DatabaseService implements AppDatabase {
   Future<Database> initDatabase() async {
     _database = await openDatabase(
       "habits.db",
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
             CREATE TABLE IF NOT EXISTS Habits (
@@ -36,6 +36,7 @@ class DatabaseService implements AppDatabase {
               completedCount INTEGER, 
               lastCompletedDate TEXT, 
               lastResetDate TEXT,
+              completionDates TEXT,
               sharedWith TEXT,
               isSynced INTEGER
             )
@@ -57,6 +58,13 @@ class DatabaseService implements AppDatabase {
         if (oldVersion < 3) {
           await db.execute('ALTER TABLE Habits ADD COLUMN lastResetDate TEXT');
         }
+        if (oldVersion < 6) {
+          try {
+            await db.execute(
+              'ALTER TABLE Habits ADD COLUMN completionDates TEXT',
+            );
+          } catch (_) {}
+        }
         if (oldVersion < 4) {
           await db.execute('''
             CREATE TABLE IF NOT EXISTS Friends (
@@ -73,6 +81,7 @@ class DatabaseService implements AppDatabase {
         }
       },
     );
+    syncAllData(FirebaseAuth.instance.currentUser?.uid ?? '');
     return _database!;
   }
 
@@ -141,43 +150,32 @@ class DatabaseService implements AppDatabase {
     }
   }
 
-  Future<void> deleteHabit(String id) async {
+  Future<void> deleteHabit(HabitModel habit) async {
     final db = await database;
 
-    // First, fetch the habit to get the userId for Firebase sync.
     final List<Map<String, dynamic>> maps = await db.query(
       'Habits',
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: [habit.id],
       limit: 1,
     );
 
     // Delete the habit locally.
-    await db.delete('Habits', where: 'id = ?', whereArgs: [id]);
+    await db.delete('Habits', where: 'id = ?', whereArgs: [habit.id]);
     Logger().i('Habit deleted locally');
 
     // If the habit existed locally, sync the deletion to Firebase.
     if (maps.isNotEmpty) {
       final habit = HabitModel.fromMap(maps.first);
       try {
-        await _firebaseService.deleteHabit(id, habit.userId);
+        await _firebaseService.deleteHabit(habit);
       } catch (e) {
         Logger().w('Failed to sync habit deletion to Firebase: $e');
       }
     }
   }
 
-  Future<void> markHabitAsSynced(String id) async {
-    final db = await database;
-    await db.update(
-      'Habits',
-      {'isSynced': 1},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
 
-  // Friend management methods
   Future<void> insertFriend(FriendModel friend) async {
     final db = await database;
     await db.insert(
@@ -245,7 +243,7 @@ class DatabaseService implements AppDatabase {
   // Sync methods
   Future<void> syncHabitsFromCloud(String userId) async {
     try {
-      final cloudHabits = await _firebaseService.getHabitsOnce(userId);
+      final cloudHabits = await _firebaseService.getHabits(userId);
       final db = await database;
 
       for (final habit in cloudHabits) {
@@ -263,7 +261,7 @@ class DatabaseService implements AppDatabase {
 
   Future<void> syncFriendsFromCloud(String userId) async {
     try {
-      final cloudFriends = await _firebaseService.getFriendsOnce(userId);
+      final cloudFriends = await _firebaseService.getFriends(userId);
       final db = await database;
 
       for (final friend in cloudFriends) {

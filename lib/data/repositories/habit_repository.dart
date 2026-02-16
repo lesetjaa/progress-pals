@@ -5,7 +5,7 @@ abstract class IHabitRepository {
   Future<List<HabitModel>> getHabits();
   Future<void> addHabit(HabitModel habit);
   Future<void> updateHabit(HabitModel habit);
-  Future<void> deleteHabit(String id);
+  Future<void> deleteHabit(HabitModel habit);
   Future<void> completeHabit(String id);
 }
 
@@ -30,8 +30,8 @@ class HabitRepository implements IHabitRepository {
   }
 
   @override
-  Future<void> deleteHabit(String id) async {
-    await _databaseService.deleteHabit(id);
+  Future<void> deleteHabit(HabitModel habit) async {
+    await _databaseService.deleteHabit(habit);
   }
 
   @override
@@ -58,6 +58,28 @@ class HabitRepository implements IHabitRepository {
         lastCompleted.day == today.day;
 
     // Toggle: if completed today, uncomplete it; otherwise complete it
+    // Prepare completionDates list and update accordingly
+    final currentDates = habit.completionDates != null
+        ? List<DateTime>.from(habit.completionDates!)
+        : <DateTime>[];
+
+    if (needsReset) {
+      // remove dates before current week
+      currentDates.removeWhere((d) => d.isBefore(currentMonday));
+    }
+
+    if (isCompletedToday) {
+      // remove today's entry
+      currentDates.removeWhere(
+        (d) =>
+            d.year == today.year &&
+            d.month == today.month &&
+            d.day == today.day,
+      );
+    } else {
+      currentDates.add(today);
+    }
+
     final updatedHabit = HabitModel(
       id: habit.id,
       userId: habit.userId,
@@ -71,6 +93,7 @@ class HabitRepository implements IHabitRepository {
                 : habit.completedCount + 1),
       lastCompletedDate: isCompletedToday ? null : DateTime.now(),
       lastResetDate: needsReset ? DateTime.now() : habit.lastResetDate,
+      completionDates: currentDates,
       sharedWith: habit.sharedWith,
       isSynced: false,
     );

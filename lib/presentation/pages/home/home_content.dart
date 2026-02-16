@@ -134,7 +134,7 @@ class _HomeContentState extends State<HomeContent> {
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      viewModel.deleteHabit(habit.id);
+                                      viewModel.deleteHabit(habit);
                                       Navigator.pop(context);
                                       ScaffoldMessenger.of(
                                         context,

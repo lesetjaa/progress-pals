@@ -46,6 +46,10 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshHabits() async {
+    await fetchHabits();
+  }
+
   Future<void> completeHabit(String habitId) async {
     try {
       await _habitRepository.completeHabit(habitId);
@@ -55,9 +59,9 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteHabit(String habitId) async {
+  Future<void> deleteHabit(HabitModel habit) async {
     try {
-      await _habitRepository.deleteHabit(habitId);
+      await _habitRepository.deleteHabit(habit);
       await fetchHabits();
     } catch (e) {
       Logger().e('Error deleting habit: $e');
@@ -66,6 +70,10 @@ class HomeViewModel extends ChangeNotifier {
 
   void setIndex(int index) {
     _selectedIndex = index;
+    // Refresh habits when home tab (index 0) is tapped
+    if (index == 0) {
+      refreshHabits();
+    }
     notifyListeners();
   }
 }

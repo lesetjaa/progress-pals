@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/data/datasources/local/database_service.dart';
@@ -45,29 +46,55 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
   }
 
   void onAddFriendPressed() async {
+    // Validate form first
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final emailToFind = _emailController.text.trim().toLowerCase();
 
     // 1. SEARCH FIRST
     final foundUserData = await _firebaseService.getUserByEmail(emailToFind);
 
-    final newFriend = FriendModel(
-      id: const Uuid().v4(),
-      userId: foundUserData?['userId'],
-      email: foundUserData?['email'],
-      name: foundUserData?['displayName'] ?? 'Unknown',
-      addedDate: DateTime.now(),
-    );
-
     if (foundUserData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User not found! Check the email.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User not found! Check the email.')),
+        );
+      }
       return;
     }
 
-    await _databaseService.insertFriend(newFriend);
+    // THE FIX: Get the current logged-in user (User A)
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    Navigator.pop(context);
+    final newFriend = FriendModel(
+      id: foundUserData['userId'], // THE FIX: The friend's actual Firebase ID
+      userId: currentUser!.uid, // THE FIX: The owner of this list (User A)
+      email: foundUserData['email'],
+      name: foundUserData['displayName'] ?? 'Unknown',
+      addedDate: DateTime.now(),
+    );
+
+    try {
+      // Save to local database
+      await _databaseService.insertFriend(newFriend);
+      // Sync to Firebase
+      await _firebaseService.addFriendToUser(newFriend);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${newFriend.name} added as friend!')),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error adding friend: $e')));
+      }
+    }
   }
 
   @override
@@ -101,25 +128,6 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name Field
-                _buildFormLabel('Friend\'s Name'),
-                const SizedBox(height: 8),
-                _buildTextFormField(
-                  controller: _nameController,
-                  hintText: 'e.g., John Doe',
-                  icon: Icons.person_outline,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a name';
-                    }
-                    if (value.length < 2) {
-                      return 'Name must be at least 2 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-
                 // Email Field
                 _buildFormLabel('Friend\'s Email'),
                 const SizedBox(height: 8),
@@ -211,10 +219,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: context.error, width: 2),
         ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         errorStyle: TextStyle(
           color: context.error,
           fontSize: 12,
