@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/data/models/habit_model.dart';
-import 'package:progress_pals/core/theme/app_colors.dart';
 
 class HabitDetailPage extends StatefulWidget {
   final HabitModel? habit;
-  const HabitDetailPage({Key? key, this.habit}) : super(key: key);
+  const HabitDetailPage({super.key, this.habit});
 
   @override
   State<HabitDetailPage> createState() => _HabitDetailPageState();
@@ -17,8 +16,6 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
   late double maxY;
   late double avgY;
 
-  // We use standard colors here to match the sample's vibe,
-  // but you can replace these with AppColors.contentColorCyan etc.
   List<Color> gradientColors = [Colors.purple, Colors.purpleAccent];
 
   @override
@@ -27,13 +24,12 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
     if (widget.habit != null) {
       weeklyData = _buildWeeklyCounts(widget.habit!);
 
-      // Calculate Max Y for chart boundaries
-      int maxCount = weeklyData
-          .map((e) => e['count'] as int)
-          .fold<int>(0, (p, n) => n > p ? n : p);
-      maxY = (maxCount + 1).toDouble(); // Add 1 for top padding
+      // --- 1. SET MAX Y TO WEEKLY TARGET ---
+      // IMPORTANT: Change '.frequency' to the actual property name in your 
+      // HabitModel that stores the repeat-per-week target (e.g., .targetDays)
+      maxY = widget.habit!.repeatPerWeek.toDouble(); 
 
-      // Calculate Average for the avgData chart
+      // Calculate Average for the avgData chart (if you ever toggle it)
       int totalCount = weeklyData
           .map((e) => e['count'] as int)
           .fold<int>(0, (p, n) => p + n);
@@ -50,20 +46,36 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
     ).subtract(Duration(days: d.weekday - 1));
   }
 
-  List<Map<String, dynamic>> _buildWeeklyCounts(
-    HabitModel habit, {
-    int weeks = 8,
-  }) {
+  List<Map<String, dynamic>> _buildWeeklyCounts(HabitModel habit) {
     final now = DateTime.now();
-    final List<DateTime> weekStarts = List.generate(weeks, (i) {
-      final start = _weekStart(now).subtract(Duration(days: 7 * i));
-      return DateTime(start.year, start.month, start.day);
-    }).reversed.toList();
 
+    // 1. Default starting point: 1 week back
+    DateTime earliestDate = now.subtract(const Duration(days: 14));
+
+    // 2. If the habit has older completions, adjust the starting point to the oldest date
+    if (habit.completionDates != null && habit.completionDates!.isNotEmpty) {
+      final oldestCompletion = habit.completionDates!.reduce((a, b) => a.isBefore(b) ? a : b);
+      if (oldestCompletion.isBefore(earliestDate)) {
+        earliestDate = oldestCompletion;
+      }
+    }
+
+    DateTime currentWeekStart = _weekStart(now);
+    DateTime iterationWeek = _weekStart(earliestDate);
+
+    // 3. Dynamically build the weeks from the start point to "Now"
+    final List<DateTime> weekStarts = [];
+    while (iterationWeek.isBefore(currentWeekStart) || iterationWeek.isAtSameMomentAs(currentWeekStart)) {
+      weekStarts.add(iterationWeek);
+      iterationWeek = iterationWeek.add(const Duration(days: 7));
+    }
+
+    // 4. Create the empty count map for our dynamic weeks
     final Map<String, int> counts = {
       for (final ws in weekStarts) ws.toIso8601String(): 0,
     };
 
+    // 5. Fill in the actual completion data
     if (habit.completionDates != null && habit.completionDates!.isNotEmpty) {
       for (final d in habit.completionDates!) {
         final ws = _weekStart(d);
@@ -73,17 +85,19 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
         }
       }
     } else {
+      // Fallback for habits with a count but no specific dates
       final key = _weekStart(now).toIso8601String();
       if (counts.containsKey(key)) counts[key] = habit.completedCount;
     }
 
+    // 6. Format for the chart
     return counts.entries.map((e) {
       final dt = DateTime.parse(e.key);
       final label = '${dt.month}/${dt.day}';
       return {'label': label, 'count': e.value};
     }).toList();
   }
-
+  
   @override
   Widget build(BuildContext context) {
     if (widget.habit == null) {
@@ -106,47 +120,29 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
             ),
             const SizedBox(height: 20),
             const Text(
-              'Completions per Week',
+              'Activity',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
-            // --- THE REFACTORED CHART AREA ---
+            // --- THE CHART AREA ---
             SizedBox(
               height: 280,
               child: Card(
                 color: context.themeBackground,
-                child: Stack(
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        right: 18,
-                        left: 12,
-                        top: 24,
-                        bottom: 12,
-                      ),
-                      child: LineChart(mainData()),
-                    ),
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      child: SizedBox(width: 60, height: 34),
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    right: 24, // Added a little more padding on the right to prevent cutoff
+                    left: 12,
+                    top: 24,
+                    bottom: 12,
+                  ),
+                  child: LineChart(mainData()),
                 ),
               ),
             ),
-
-            // ---------------------------------
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              children: weeklyData
-                  .map(
-                    (w) => Chip(label: Text('${w['label']} : ${w['count']}')),
-                  )
-                  .toList(),
-            ),
+            
+            // --- 3. WRAP WIDGET REMOVED FROM HERE ---
           ],
         ),
       ),
@@ -218,7 +214,18 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
           sideTitles: SideTitles(showTitles: false),
         ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        
+        // --- 2. ADDED X-AXIS LABEL ("Weeks") ---
         bottomTitles: AxisTitles(
+          axisNameWidget: const Text(
+            'Weeks',
+            style: TextStyle(
+              fontSize: 12, 
+              fontWeight: FontWeight.bold, 
+              color: Color(0xff68737d),
+            ),
+          ),
+          axisNameSize: 32,
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 30,
@@ -226,28 +233,40 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
             getTitlesWidget: bottomTitleWidgets,
           ),
         ),
+        
+        // --- 2. ADDED Y-AXIS LABEL ("Completions") ---
         leftTitles: AxisTitles(
+          axisNameWidget: const Text(
+            'Completions',
+            style: TextStyle(
+              fontSize: 12, 
+              fontWeight: FontWeight.bold, 
+              color: Color(0xff67727d),
+            ),
+          ),
+          axisNameSize: 32, // Gives space for the text
           sideTitles: SideTitles(
             showTitles: true,
             interval: 1,
             getTitlesWidget: leftTitleWidgets,
-            reservedSize: 42,
+            reservedSize: 24, // Adjusted to fit alongside the axis name
           ),
         ),
       ),
       borderData: FlBorderData(
         show: true,
-        border: Border(
+        border: const Border(
           left: BorderSide(color: Color(0xff37434d), width: 1),
           bottom: BorderSide(color: Color(0xff37434d), width: 1),
         ),
       ),
       minX: 0,
-      maxX: (weeklyData.length + 1).toDouble(),
+      maxX: (weeklyData.length - 1).toDouble(), // Fixed to perfectly align data at the end
       minY: 0,
-      maxY: maxY == 0 ? 1 : maxY, // Default to 5 if no data
+      maxY: maxY == 0 ? 1 : maxY, // Now strictly respects your weekly target
       lineBarsData: [
         LineChartBarData(
+          preventCurveOverShooting: true,
           spots: spots,
           isCurved: true,
           gradient: LinearGradient(colors: gradientColors),
