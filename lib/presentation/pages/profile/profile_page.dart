@@ -2,12 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/web.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:progress_pals/core/theme/app_colors.dart';
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/core/theme/theme_provider.dart';
 import 'package:progress_pals/data/datasources/local/database_service.dart';
 import 'package:progress_pals/data/datasources/remote/firebase_service.dart';
 import 'package:progress_pals/presentation/widgets/app_button.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -19,11 +23,38 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late User? _currentUser;
   bool _isSyncing = false;
+  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
     _currentUser = FirebaseAuth.instance.currentUser;
+    _initAppVersion();
+  }
+
+  Future<void> _initAppVersion() async {
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          // This creates a string like "v1.0.0 (1)"
+          _appVersion = 'v${packageInfo.version} (${packageInfo.buildNumber})';
+        });
+      }
+    } catch (e) {
+      Logger().e('Failed to get package info: $e');
+    }
+  }
+
+  Future<void> _launchURL(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        Logger().e('Could not launch $url');
+      }
+    } catch (e) {
+      Logger().e('Error launching URL: $e');
+    }
   }
 
   Future<void> _syncData() async {
@@ -57,7 +88,8 @@ class _ProfilePageState extends State<ProfilePage> {
         return AlertDialog(
           title: const Text('Delete Account'),
           content: const Text(
-              'Are you sure you want to delete your account? This action cannot be undone.'),
+            'Are you sure you want to delete your account? This action cannot be undone and you will lose all habit data.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -68,24 +100,36 @@ class _ProfilePageState extends State<ProfilePage> {
                 Navigator.pop(context);
                 try {
                   final userId = _currentUser?.uid;
+                  // 1. Delete from Firebase Auth
                   await FirebaseAuth.instance.currentUser?.delete();
 
-                  // Clear local data for this user
+                  // 2. Clear local data
                   if (userId != null && mounted) {
                     final databaseService = context.read<DatabaseService>();
                     await databaseService.clearUserData(userId);
                   }
 
+                  // 3. Navigate to Welcome Screen
                   if (mounted) {
-                    context.pushReplacement('/');
+                    context.go('/welcome'); // Use go() to clear the stack
+                  }
+                } on FirebaseAuthException catch (e) {
+                  // Specific error handling for "Requires Recent Login"
+                  if (e.code == 'requires-recent-login') {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please log out and log in again to delete your account.',
+                          ),
+                        ),
+                      );
+                    }
+                  } else {
+                    Logger().e('Error deleting account: $e');
                   }
                 } catch (e) {
                   Logger().e('Error deleting account: $e');
-                  if (mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                  }
                 }
               },
               child: Text('Delete', style: TextStyle(color: context.error)),
@@ -347,12 +391,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 32),
 
                 // Sync Button
-                _isSyncing
-                    ? const Center(child: CircularProgressIndicator())
-                    : AppButton(
-                        text: 'Sync Data with Cloud',
-                        onPressed: _syncData,
-                      ),
+                AppButton(
+                  text: 'Delete Account',
+                  onPressed: deleteUserAccount,
+                  type: ButtonType.warning,
+                ),
                 const SizedBox(height: 16),
 
                 // Logout Button
@@ -363,11 +406,22 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Version Info
-                Text(
-                  'Version 1.0.0',
-                  style: TextStyle(color: context.themeTextSecondary, fontSize: 12),
-                ),
+                // App bottom text functions
+                _bottomFunctionalText(),
+
+                const SizedBox(height: 16), // Space between links and version
+                // 4. Show the dynamic app version at the very bottom
+                if (_appVersion.isNotEmpty)
+                  Text(
+                    _appVersion,
+                    style: TextStyle(
+                      color: context.themeTextDisabled, // Nice faded grey color
+                      fontSize: 12,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+
+                const SizedBox(height: 20),
 
                 // SizedBox(height: screenHeight * 0.15),
               ],
@@ -399,6 +453,80 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _bottomFunctionalText() {
+    return Center(
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.center, // This ensures it is perfectly centered
+        children: [
+          // 1. Restore Data Link
+          InkWell(
+            onTap: _isSyncing ? null : _syncData,
+            child: _isSyncing
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(
+                    "Restore Data",
+                    style: TextStyle(
+                      color: context.themeTextSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+          ),
+
+          // Divider
+          _buildVerticalDivider(),
+
+          // 2. Support Link (External URL)
+          InkWell(
+            onTap: () => _launchURL('https://lesetja.dev/support'),
+            child: Text(
+              "Support",
+              style: TextStyle(
+                color: context.themeTextSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+
+          // Divider
+          _buildVerticalDivider(),
+
+          // 3. Privacy Policy Link (External URL)
+          // NOTE: I changed "Terms" to "Privacy" because Apple specifically requires Privacy
+          InkWell(
+            onTap: () => _launchURL('https://lesetja.dev/privacy'),
+            child: Text(
+              "Privacy Policy",
+              style: TextStyle(
+                color: context.themeTextSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+      ), // Spacing between items
+      height: 12,
+      width: 1,
+      color: context.themeDivider,
     );
   }
 }
