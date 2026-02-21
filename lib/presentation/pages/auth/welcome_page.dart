@@ -24,7 +24,7 @@ class WelcomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: screenHeight * 0.03),
+                SizedBox(height: screenHeight * 0.05),
             
                 // 1. Header Text
                 Center(
@@ -40,18 +40,18 @@ class WelcomePage extends StatelessWidget {
                   ),
                 ),
             
-                Spacer(flex: screenHeight > 700 ? 2 : 1),
+                SizedBox(height: screenHeight * 0.02),
             
                 // 2. Illustration
                 Center(
                   child: SvgPicture.asset(
                     'assets/images/Login_page_image.svg',
-                    height: screenHeight * 0.45,
+                    height: screenHeight * 0.5,
                     fit: BoxFit.cover,
                   ),
                 ),
             
-                Spacer(flex: screenHeight > 700 ? 2 : 1),
+                SizedBox(height: screenHeight * 0.05),
 
                  Center(
                   child: Text(
@@ -78,7 +78,7 @@ class WelcomePage extends StatelessWidget {
                   ),
                 ),
 
-                Spacer(flex: screenHeight > 700 ? 2 : 1),
+                SizedBox(height: screenHeight * 0.03),
 
                 AppButton(
                   text: 'Get Started',
@@ -89,7 +89,7 @@ class WelcomePage extends StatelessWidget {
                 ),
 
             
-                SizedBox(height: screenHeight * 0.02),
+                SizedBox(height: screenHeight * 0.01),
               ],
             ),
           ),
