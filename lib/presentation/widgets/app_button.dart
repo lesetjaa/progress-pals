@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:progress_pals/core/theme/app_colors.dart';
 
-enum ButtonType { primary, outline }
+enum ButtonType { primary, outline, warning }
 
 class AppButton extends StatelessWidget {
   final String text;
@@ -18,6 +18,8 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPrimary = type == ButtonType.primary;
+    final isWarning = type == ButtonType.warning;
+    final isOutline = type == ButtonType.outline;
 
     return SizedBox(
       width: double.infinity, // Full width
@@ -25,9 +27,9 @@ class AppButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? AppColors.primary : Colors.transparent,
+          backgroundColor: isPrimary ? AppColors.primary : isWarning ? AppColors.error : Colors.transparent,
           elevation: 0,
-          side: isPrimary ? null : const BorderSide(color: AppColors.primary, width: 1.5),
+          side: isPrimary ? null :  BorderSide(color: isOutline ? AppColors.primary : AppColors.error , width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12), // Smooth corners
           ),
@@ -35,7 +37,7 @@ class AppButton extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: isPrimary ? Colors.white : AppColors.primary,
+            color: isOutline ? AppColors.primary : Colors.white ,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
