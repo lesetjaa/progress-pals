@@ -34,8 +34,8 @@ class HomePage extends StatelessWidget {
         itemPadding: EdgeInsets.only(
           left: screenWidth * 0.04,
           right: screenWidth * 0.04,
-          top: screenHeight * 0.017,
-          bottom: screenHeight * 0.017,
+          top: screenHeight > 750 ? screenHeight * 0.009 : screenHeight * 0.017,
+          bottom: screenHeight > 750 ? screenHeight * 0.009 : screenHeight * 0.017,
         ),
         margin: const EdgeInsets.all(0),
         marginR: EdgeInsets.symmetric(horizontal: screenHeight * 0.05),
