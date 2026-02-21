@@ -246,4 +246,50 @@ class FirebaseService {
       rethrow;
     }
   }
+
+  Future<void> deleteAllHabits(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('habits')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      final batch = _firestore.batch();
+      for (var doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      _logger.i('All habits deleted from Firestore for user: $userId');
+    } catch (e) {
+      _logger.e('Error deleting all habits: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteAllFriends(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('friends')
+          .get();
+
+      final batch = _firestore.batch();
+      for (var doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      _logger.i('All friends deleted from Firestore for user: $userId');
+    } catch (e) {
+      _logger.e('Error deleting all friends: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteUserData(String userId) async {
+    await deleteAllHabits(userId);
+    await deleteAllFriends(userId);
+    await _firestore.collection('users').doc(userId).delete();
+    Logger().i('All user data deleted from Firestore for user: $userId');
+  }
 }

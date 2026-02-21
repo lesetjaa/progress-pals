@@ -1,13 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/web.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:progress_pals/core/theme/app_colors.dart';
 import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/core/theme/theme_provider.dart';
 import 'package:progress_pals/data/datasources/local/database_service.dart';
 import 'package:progress_pals/data/datasources/remote/firebase_service.dart';
 import 'package:progress_pals/presentation/widgets/app_button.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -19,11 +24,39 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late User? _currentUser;
   bool _isSyncing = false;
+  bool _isDeletingAccount = false;
+  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
     _currentUser = FirebaseAuth.instance.currentUser;
+    _initAppVersion();
+  }
+
+  Future<void> _initAppVersion() async {
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          // This creates a string like "v1.0.0 (1)"
+          _appVersion = 'v${packageInfo.version} (${packageInfo.buildNumber})';
+        });
+      }
+    } catch (e) {
+      Logger().e('Failed to get package info: $e');
+    }
+  }
+
+  Future<void> _launchURL(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        Logger().e('Could not launch $url');
+      }
+    } catch (e) {
+      Logger().e('Error launching URL: $e');
+    }
   }
 
   Future<void> _syncData() async {
@@ -48,6 +81,69 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
     setState(() => _isSyncing = false);
+  }
+
+  Future<void> deleteUserAccount() async {
+    final databaseService = context.read<DatabaseService>();
+
+    showDialog(
+      context: context,
+      // 2. Rename this to dialogContext so it doesn't hide the main context
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete Account'),
+          content: const Text(
+            'Are you sure you want to delete your account? This action cannot be undone and you will lose all habit data.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                setState(() => _isDeletingAccount = true);
+                // Pop the dialog using the dialogContext
+                Navigator.pop(dialogContext);
+
+                try {
+                  final userId = _currentUser?.uid;
+                  if (userId == null) return;
+
+                  await databaseService.deleteAllData(userId);
+
+                  await FirebaseAuth.instance.currentUser?.delete();
+
+                  if (mounted) {
+                    context.go('/');
+                  }
+                } on FirebaseAuthException catch (e) {
+                  setState(() {
+                    _isDeletingAccount = false;
+                  });
+                  if (e.code == 'requires-recent-login') {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Security requirement: Please log out and log back in to delete your account.',
+                          ),
+                        ),
+                      );
+                    }
+                  } else {
+                    Logger().e('FirebaseAuthException: $e');
+                  }
+                } catch (e) {
+                  Logger().e('Error deleting account: $e');
+                }
+              },
+              child: Text('Delete', style: TextStyle(color: context.error)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _updateDisplayName() async {
@@ -140,7 +236,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: context.themeBackground,
       body: SafeArea(
@@ -166,13 +261,13 @@ class _ProfilePageState extends State<ProfilePage> {
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color:context.themeTextPrimary,
+                        color: context.themeTextPrimary,
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-        
+
                 // User Email
                 Text(
                   _currentUser?.email ?? 'No email',
@@ -207,7 +302,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 const SizedBox(height: 32),
-        
+
                 // Account Info Section
                 Container(
                   width: double.infinity,
@@ -220,7 +315,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                       Text(
+                      Text(
                         'Account Information',
                         style: TextStyle(
                           color: context.themeTextPrimary,
@@ -245,7 +340,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-        
+
                 // Preferences Section
                 Container(
                   width: double.infinity,
@@ -283,7 +378,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               return Switch(
                                 inactiveTrackColor: context.themeTextDisabled,
                                 inactiveThumbColor: context.themeTextSecondary,
-                                value: themeProvider.themeMode == ThemeMode.dark,
+                                value:
+                                    themeProvider.themeMode == ThemeMode.dark,
                                 onChanged: (value) async {
                                   await themeProvider.setThemeMode(
                                     value ? ThemeMode.dark : ThemeMode.light,
@@ -299,16 +395,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-        
+
                 // Sync Button
-                _isSyncing
-                    ? const Center(child: CircularProgressIndicator())
+                _isDeletingAccount
+                    ? const CircularProgressIndicator()
                     : AppButton(
-                        text: 'Sync Data with Cloud',
-                        onPressed: _syncData,
+                        text: 'Delete Account',
+                        onPressed: deleteUserAccount,
+                        type: ButtonType.warning,
                       ),
                 const SizedBox(height: 16),
-        
+
                 // Logout Button
                 AppButton(
                   text: 'Logout',
@@ -316,13 +413,24 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: _logout,
                 ),
                 const SizedBox(height: 16),
-        
-                // Version Info
-                Text(
-                  'Version 1.0.0',
-                  style: TextStyle(color: context.themeTextSecondary, fontSize: 12),
-                ),
-        
+
+                // App bottom text functions
+                _bottomFunctionalText(),
+
+                const SizedBox(height: 16), // Space between links and version
+                // 4. Show the dynamic app version at the very bottom
+                if (_appVersion.isNotEmpty)
+                  Text(
+                    _appVersion,
+                    style: TextStyle(
+                      color: context.themeTextDisabled, // Nice faded grey color
+                      fontSize: 12,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+
+                const SizedBox(height: 20),
+
                 // SizedBox(height: screenHeight * 0.15),
               ],
             ),
@@ -353,6 +461,80 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _bottomFunctionalText() {
+    return Center(
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.center, // This ensures it is perfectly centered
+        children: [
+          // 1. Restore Data Link
+          InkWell(
+            onTap: _isSyncing ? null : _syncData,
+            child: _isSyncing
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(
+                    "Restore Data",
+                    style: TextStyle(
+                      color: context.themeTextSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+          ),
+
+          // Divider
+          _buildVerticalDivider(),
+
+          // 2. Support Link (External URL)
+          InkWell(
+            onTap: () => _launchURL('https://lesetja.dev/support'),
+            child: Text(
+              "Support",
+              style: TextStyle(
+                color: context.themeTextSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+
+          // Divider
+          _buildVerticalDivider(),
+
+          // 3. Privacy Policy Link (External URL)
+          // NOTE: I changed "Terms" to "Privacy" because Apple specifically requires Privacy
+          InkWell(
+            onTap: () => _launchURL('https://lesetja.dev/privacy'),
+            child: Text(
+              "Privacy Policy",
+              style: TextStyle(
+                color: context.themeTextSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+      ), // Spacing between items
+      height: 12,
+      width: 1,
+      color: context.themeDivider,
     );
   }
 }

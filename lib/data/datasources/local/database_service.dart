@@ -175,7 +175,6 @@ class DatabaseService implements AppDatabase {
     }
   }
 
-
   Future<void> insertFriend(FriendModel friend) async {
     final db = await database;
     await db.insert(
@@ -281,5 +280,15 @@ class DatabaseService implements AppDatabase {
     await syncHabitsFromCloud(userId);
     await syncFriendsFromCloud(userId);
     Logger().i('All data synced from cloud');
+  }
+
+  Future<void> deleteAllData(String userId) async {
+    try {
+      await _firebaseService.deleteUserData(userId);
+      await clearUserData(userId);
+      Logger().i('All user data deleted from Firebase for user: $userId');
+    } catch (e) {
+      Logger().e('Error deleting user data from Firebase: $e');
+    }
   }
 }
