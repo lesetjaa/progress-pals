@@ -283,9 +283,9 @@ class DatabaseService implements AppDatabase {
   }
 
   Future<void> deleteAllData(String userId) async {
-    await clearUserData(userId);
     try {
       await _firebaseService.deleteUserData(userId);
+      await clearUserData(userId);
       Logger().i('All user data deleted from Firebase for user: $userId');
     } catch (e) {
       Logger().e('Error deleting user data from Firebase: $e');

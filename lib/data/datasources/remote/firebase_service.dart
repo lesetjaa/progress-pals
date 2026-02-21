@@ -264,7 +264,6 @@ class FirebaseService {
       _logger.e('Error deleting all habits: $e');
       rethrow;
     }
-
   }
 
   Future<void> deleteAllFriends(String userId) async {
@@ -290,6 +289,7 @@ class FirebaseService {
   Future<void> deleteUserData(String userId) async {
     await deleteAllHabits(userId);
     await deleteAllFriends(userId);
+    await _firestore.collection('users').doc(userId).delete();
     Logger().i('All user data deleted from Firestore for user: $userId');
   }
 }

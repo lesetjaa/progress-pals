@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +24,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late User? _currentUser;
   bool _isSyncing = false;
+  bool _isDeletingAccount = false;
   String _appVersion = '';
 
   @override
@@ -82,9 +84,12 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> deleteUserAccount() async {
+    final databaseService = context.read<DatabaseService>();
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      // 2. Rename this to dialogContext so it doesn't hide the main context
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Account'),
           content: const Text(
@@ -92,41 +97,42 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context);
+                setState(() => _isDeletingAccount = true);
+                // Pop the dialog using the dialogContext
+                Navigator.pop(dialogContext);
+
                 try {
                   final userId = _currentUser?.uid;
-                  // 1. Delete from Firebase Auth
+                  if (userId == null) return;
+
+                  await databaseService.deleteAllData(userId);
+
                   await FirebaseAuth.instance.currentUser?.delete();
 
-                  // 2. Clear all data
-                  if (userId != null && mounted) {
-                    final databaseService = context.read<DatabaseService>();
-                    await databaseService.deleteAllData(userId);
-                  }
-
-                  // 3. Navigate to Welcome Screen
                   if (mounted) {
-                    context.go('/welcome'); // Use go() to clear the stack
+                    context.go('/');
                   }
                 } on FirebaseAuthException catch (e) {
-                  // Specific error handling for "Requires Recent Login"
+                  setState(() {
+                    _isDeletingAccount = false;
+                  });
                   if (e.code == 'requires-recent-login') {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Please log out and log in again to delete your account.',
+                            'Security requirement: Please log out and log back in to delete your account.',
                           ),
                         ),
                       );
                     }
                   } else {
-                    Logger().e('Error deleting account: $e');
+                    Logger().e('FirebaseAuthException: $e');
                   }
                 } catch (e) {
                   Logger().e('Error deleting account: $e');
@@ -391,11 +397,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 32),
 
                 // Sync Button
-                AppButton(
-                  text: 'Delete Account',
-                  onPressed: deleteUserAccount,
-                  type: ButtonType.warning,
-                ),
+                _isDeletingAccount
+                    ? const CircularProgressIndicator()
+                    : AppButton(
+                        text: 'Delete Account',
+                        onPressed: deleteUserAccount,
+                        type: ButtonType.warning,
+                      ),
                 const SizedBox(height: 16),
 
                 // Logout Button
