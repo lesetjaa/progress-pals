@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:progress_pals/core/theme/app_colors.dart';
+import 'package:progress_pals/core/theme/theme_extensions.dart';
 import 'package:progress_pals/presentation/widgets/app_button.dart';
 
 class WelcomePage extends StatelessWidget {
@@ -23,42 +24,72 @@ class WelcomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: screenHeight * 0.03),
+                SizedBox(height: screenHeight * 0.05),
             
                 // 1. Header Text
-                Text(
-                  'WELCOME\nBACK.',
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.primary,
-                    height: 1.1,
-                    letterSpacing: -1.0,
+                Center(
+                  child: Text(
+                    'PROGRESS PALS!',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primary,
+                      height: 1.1,
+                      letterSpacing: -1.0,
+                    ),
                   ),
                 ),
             
-                Spacer(flex: screenHeight > 700 ? 2 : 1),
+                SizedBox(height: screenHeight * 0.02),
             
                 // 2. Illustration
                 Center(
                   child: SvgPicture.asset(
                     'assets/images/Login_page_image.svg',
-                    height: screenHeight * 0.4,
-                    fit: BoxFit.contain,
+                    height: screenHeight * 0.5,
+                    fit: BoxFit.cover,
                   ),
                 ),
             
-                Spacer(flex: screenHeight > 700 ? 2 : 1),
+                SizedBox(height: screenHeight * 0.05),
+
+                 Center(
+                  child: Text(
+                    'Track Your Habits!',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                SizedBox(height: screenHeight * 0.01),
             
+                Center(
+                  child: Text(
+                    'Complete, Connect, and Conquer Your Weekly Goals with Progress Pals!',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: context.themeTextDisabled
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                SizedBox(height: screenHeight * 0.03),
+
                 AppButton(
-                  text: 'Login',
+                  text: 'Get Started',
                   type: ButtonType.primary,
                   onPressed: () {
                     context.push('/sign-in');
                   },
                 ),
+
             
-                SizedBox(height: screenHeight * 0.02),
+                SizedBox(height: screenHeight * 0.01),
               ],
             ),
           ),
