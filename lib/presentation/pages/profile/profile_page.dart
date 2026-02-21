@@ -103,10 +103,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   // 1. Delete from Firebase Auth
                   await FirebaseAuth.instance.currentUser?.delete();
 
-                  // 2. Clear local data
+                  // 2. Clear all data
                   if (userId != null && mounted) {
                     final databaseService = context.read<DatabaseService>();
-                    await databaseService.clearUserData(userId);
+                    await databaseService.deleteAllData(userId);
                   }
 
                   // 3. Navigate to Welcome Screen
