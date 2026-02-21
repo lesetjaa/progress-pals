@@ -50,6 +50,52 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _isSyncing = false);
   }
 
+  Future<void> deleteUserAccount() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Account'),
+          content: const Text(
+              'Are you sure you want to delete your account? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  final userId = _currentUser?.uid;
+                  await FirebaseAuth.instance.currentUser?.delete();
+
+                  // Clear local data for this user
+                  if (userId != null && mounted) {
+                    final databaseService = context.read<DatabaseService>();
+                    await databaseService.clearUserData(userId);
+                  }
+
+                  if (mounted) {
+                    context.pushReplacement('/');
+                  }
+                } catch (e) {
+                  Logger().e('Error deleting account: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+              },
+              child: Text('Delete', style: TextStyle(color: context.error)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _updateDisplayName() async {
     final controller = TextEditingController(text: _currentUser?.displayName);
 
@@ -140,7 +186,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: context.themeBackground,
       body: SafeArea(
@@ -166,13 +211,13 @@ class _ProfilePageState extends State<ProfilePage> {
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color:context.themeTextPrimary,
+                        color: context.themeTextPrimary,
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-        
+
                 // User Email
                 Text(
                   _currentUser?.email ?? 'No email',
@@ -207,7 +252,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 const SizedBox(height: 32),
-        
+
                 // Account Info Section
                 Container(
                   width: double.infinity,
@@ -220,7 +265,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                       Text(
+                      Text(
                         'Account Information',
                         style: TextStyle(
                           color: context.themeTextPrimary,
@@ -245,7 +290,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-        
+
                 // Preferences Section
                 Container(
                   width: double.infinity,
@@ -283,7 +328,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               return Switch(
                                 inactiveTrackColor: context.themeTextDisabled,
                                 inactiveThumbColor: context.themeTextSecondary,
-                                value: themeProvider.themeMode == ThemeMode.dark,
+                                value:
+                                    themeProvider.themeMode == ThemeMode.dark,
                                 onChanged: (value) async {
                                   await themeProvider.setThemeMode(
                                     value ? ThemeMode.dark : ThemeMode.light,
@@ -299,7 +345,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-        
+
                 // Sync Button
                 _isSyncing
                     ? const Center(child: CircularProgressIndicator())
@@ -308,7 +354,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         onPressed: _syncData,
                       ),
                 const SizedBox(height: 16),
-        
+
                 // Logout Button
                 AppButton(
                   text: 'Logout',
@@ -316,13 +362,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: _logout,
                 ),
                 const SizedBox(height: 16),
-        
+
                 // Version Info
                 Text(
                   'Version 1.0.0',
                   style: TextStyle(color: context.themeTextSecondary, fontSize: 12),
                 ),
-        
+
                 // SizedBox(height: screenHeight * 0.15),
               ],
             ),
