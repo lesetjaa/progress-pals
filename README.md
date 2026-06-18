@@ -129,9 +129,3 @@ Distributed under the MIT License. See LICENSE for more information.
 
 
 ---
-
-### Tips for a Great GitHub Profile
-1.  **Screenshots:** Create a folder named `assets/screenshots` in your repo and add 3-4 high-quality images of the app. Link to them in the `README` using `![Home Screen](assets/screenshots/home.png)`.
-2.  **The "Why":** Since you are a student, employers love to see *why* you made certain technical choices. In the "About" section, I mentioned WeThinkCode and the accountability problem to show your passion for solving real-world issues.
-
-**Would you like me to help you write a LinkedIn post to announce the app launch using this same professional tone?**
